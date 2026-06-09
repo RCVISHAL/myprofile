@@ -1,51 +1,62 @@
-document.addEventListener('DOMContentLoaded',function(){
-  const hamburger=document.querySelector('.hamburger');
-  const navMenu=document.querySelector('.nav-menu');
-  hamburger && hamburger.addEventListener('click',()=>{
-    navMenu.classList.toggle('open');
-    hamburger.classList.toggle('open');
-  });
+document.addEventListener('DOMContentLoaded', () => {
+  const hamburger = document.querySelector('.hamburger');
+  const navMenu = document.querySelector('.nav-menu');
+  const navLinks = document.querySelectorAll('.nav-link');
 
-  // Smooth scroll for anchor links
-  document.querySelectorAll('a[href^="#"]').forEach(a=>{
-    a.addEventListener('click',function(e){
-      const target=document.querySelector(this.getAttribute('href'));
-      if(target){
-        e.preventDefault();
-        target.scrollIntoView({behavior:'smooth',block:'start'});
-        if(navMenu.classList.contains('open')) navMenu.classList.remove('open');
-      }
-    });
-  });
-
-  // Animate linear progress bars when visible
-  const progressFills=document.querySelectorAll('.progress-fill');
-  const circulars=document.querySelectorAll('.circular-progress');
-
-  function animateProgress(){
-    progressFills.forEach(p=>{
-      const rect=p.getBoundingClientRect();
-      if(rect.top < window.innerHeight - 40){
-        const percent=Number(p.dataset.progress||0);
-        p.style.width = percent + '%';
-      }
+  if (hamburger && navMenu) {
+    hamburger.addEventListener('click', () => {
+      hamburger.classList.toggle('active');
+      navMenu.classList.toggle('active');
     });
 
-    circulars.forEach(c=>{
-      const rect=c.getBoundingClientRect();
-      if(rect.top < window.innerHeight - 40){
-        const percent=Number(c.dataset.percentage||0);
-        const circle=c.querySelector('.progress-ring-circle');
-        if(circle){
-          const radius = circle.r.baseVal.value;
-          const circumference = 2 * Math.PI * radius;
-          circle.style.strokeDasharray = `${circumference}`;
-          const offset = circumference - (percent/100) * circumference;
-          circle.style.strokeDashoffset = offset;
-        }
-      }
+    navLinks.forEach((link) => {
+      link.addEventListener('click', () => {
+        hamburger.classList.remove('active');
+        navMenu.classList.remove('active');
+      });
     });
   }
-  animateProgress();
-  window.addEventListener('scroll',animateProgress);
+
+  document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+    anchor.addEventListener('click', function (event) {
+      const targetId = this.getAttribute('href');
+      if (!targetId || targetId === '#') return;
+      const target = document.querySelector(targetId);
+      if (target) {
+        event.preventDefault();
+        const top = target.getBoundingClientRect().top + window.scrollY - 70;
+        window.scrollTo({ top, behavior: 'smooth' });
+      }
+    });
+  });
+
+  const progressBars = document.querySelectorAll('.progress-fill');
+  progressBars.forEach((bar, index) => {
+    const percent = parseInt(bar.getAttribute('data-progress'), 10) || 0;
+    setTimeout(() => {
+      bar.style.width = `${percent}%`;
+    }, 120 + index * 120);
+  });
+
+  const rings = document.querySelectorAll('.circular-progress');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      const ring = entry.target;
+      const percent = parseInt(ring.getAttribute('data-percentage'), 10) || 0;
+      const circle = ring.querySelector('.ring-circle');
+      const radius = 70;
+      const circumference = 2 * Math.PI * radius;
+      const offset = circumference - (percent / 100) * circumference;
+      circle.style.strokeDasharray = circumference;
+      circle.style.strokeDashoffset = circumference;
+      requestAnimationFrame(() => {
+        circle.style.strokeDashoffset = offset;
+      });
+      observer.unobserve(ring);
+    });
+  }, { threshold: 0.5 });
+
+  rings.forEach((ring) => observer.observe(ring));
 });
+
